@@ -12,6 +12,8 @@ const telaPagamento = document.getElementById('tela-pagamento');
 const modalCpf = document.getElementById('modal-cpf');
 const modalPagamento = document.getElementById('modal-pagamento');
 const telaFinalizacao = document.getElementById('tela-finalizacao');
+const modalErro = document.getElementById('modal-erro'); // novo modal
+const erroMensagem = document.getElementById('erro-mensagem'); // span/p/div dentro do modal
 
 const btnIniciar = document.getElementById('iniciar');
 const btnFinalizar = document.getElementById('finalizar-compra');
@@ -99,14 +101,12 @@ numpadBtns.forEach(btn => {
 
 btnClear.addEventListener('click', () => {
     let newCpf = cpfDisplay.textContent.split('');
-
     for (let i = newCpf.length - 1; i >= 0; i--) {
         if (newCpf[i] !== '_' && newCpf[i] !== '.' && newCpf[i] !== '-') {
             newCpf[i] = '_';
             break;
         }
     }
-
     cpfDisplay.textContent = newCpf.join('');
 });
 
@@ -117,7 +117,7 @@ btnConfirm.addEventListener('click', () => {
         telaLeitura.style.display = 'flex';
         codigoBarras.focus();
     } else {
-        alert('Informe um CPF completo ou clique em "Não, obrigado".');
+        mostrarErro('Informe um CPF completo ou clique em "Não, obrigado".');
     }
 });
 
@@ -139,7 +139,7 @@ codigoBarras.addEventListener('keypress', (e) => {
                 codigoBarras.value = '';
             })
             .catch(() => {
-                alert('Produto não encontrado!');
+                mostrarErro('Produto não encontrado!');
                 codigoBarras.value = '';
             });
     }
@@ -178,10 +178,9 @@ function calcularTotal() {
 // ========================
 btnFinalizar.addEventListener('click', () => {
     if (produtos.length === 0) {
-        alert('Nenhum produto adicionado!');
+        mostrarErro('Nenhum produto adicionado!');
         return;
     }
-
     modalPagamento.style.display = 'flex';
 });
 
@@ -199,24 +198,19 @@ document.querySelectorAll('.pagamento-btn').forEach(btn => {
         modalPagamento.style.display = 'none';
 
         if (metodo === 'pix') {
-            // chama a função que cria o pagamento e mostra o QR com polling
             criarPagamentoEMostrarQR();
         } else {
-            alert('Por enquanto somente PIX está disponível.');
+            mostrarErro('Por enquanto somente PIX está disponível.');
         }
     });
 });
 
-// botão "voltar" da tela de pagamento (cancela QR e polling)
 btnVoltar.addEventListener('click', () => {
-    // esconder tela de pagamento e mostrar leitura
     telaPagamento.style.display = 'none';
     telaLeitura.style.display = 'flex';
 
-    // limpar QR image
     if (qrCodeImg) qrCodeImg.src = 'https://via.placeholder.com/250x250?text=QR+CODE';
 
-    // cancelar polling se houver
     if (pagamentoPollingHandle) {
         clearInterval(pagamentoPollingHandle);
         pagamentoPollingHandle = null;
@@ -224,21 +218,19 @@ btnVoltar.addEventListener('click', () => {
 });
 
 // ========================
-// CRIAR PAGAMENTO E MOSTRAR QR (fluxo real)
+// CRIAR PAGAMENTO E MOSTRAR QR
 // ========================
 async function criarPagamentoEMostrarQR() {
     const total = produtos.reduce((sum, p) => sum + p.preco, 0);
 
-    // validação rápida
     if (isNaN(total) || total <= 0) {
-        alert('Valor inválido para pagamento.');
+        mostrarErro('Valor inválido para pagamento.');
         return;
     }
 
     const payload = { valorTotal: total, metodoPagamento: "PIX" };
 
     try {
-        // Chama POST /vendas -> cria pagamento no Mercado Pago e salva venda PENDENTE
         const resp = await fetch('/vendas', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -248,53 +240,43 @@ async function criarPagamentoEMostrarQR() {
         if (!resp.ok) {
             const err = await resp.json().catch(() => ({}));
             console.error('Erro criar pagamento:', err);
-            alert('Erro ao gerar pagamento. Tente novamente.');
+            mostrarErro('Erro ao gerar pagamento. Tente novamente.');
             return;
         }
 
         const data = await resp.json();
-        const qrBase64 = data.qrCodeBase64 || data.qrCode || null; // fallback
+        const qrBase64 = data.qrCodeBase64 || data.qrCode || null;
         const paymentId = (data.paymentId || data.payment_id || data.id || '').toString();
         const ticketUrl = data.urlPagamento || data.ticket_url || null;
 
         if (!qrBase64 && !ticketUrl) {
-            alert('QR Code não disponível. Tente novamente.');
+            mostrarErro('QR Code não disponível. Tente novamente.');
             return;
         }
 
-        // Exibe tela do QR Code
         telaLeitura.style.display = 'none';
         telaPagamento.style.display = 'flex';
 
-        // Mostra o QR (img) — preferimos base64; se não houver, usa ticketUrl como fallback
-        if (qrBase64 && qrCodeImg) {
-            qrCodeImg.src = 'data:image/png;base64,' + qrBase64;
-        } else if (ticketUrl && qrCodeImg) {
-            // caso MP retorne uma URL (ticket_url) em vez de base64
-            qrCodeImg.src = ticketUrl;
-        }
+        if (qrBase64 && qrCodeImg) qrCodeImg.src = 'data:image/png;base64,' + qrBase64;
+        else if (ticketUrl && qrCodeImg) qrCodeImg.src = ticketUrl;
 
-        // Atualiza valor exibido na tela de pagamento
         if (valorPix) valorPix.textContent = `R$ ${total.toFixed(2)}`;
 
-        // Inicia polling para verificar status da venda no backend (GET /vendas/status/{paymentId})
         if (!paymentId) {
             console.warn('paymentId não retornado; polling não será iniciado.');
             return;
         }
 
-        // cancel any previous polling
         if (pagamentoPollingHandle) {
             clearInterval(pagamentoPollingHandle);
             pagamentoPollingHandle = null;
         }
 
-        const checkInterval = 3000; // ms
+        const checkInterval = 3000;
         pagamentoPollingHandle = setInterval(async () => {
             try {
                 const statusResp = await fetch(`/vendas/status/${encodeURIComponent(paymentId)}`);
                 if (!statusResp.ok) {
-                    // se 404 ou erro, apenas loga e tenta novamente
                     console.warn('Erro ao consultar status do pagamento');
                     return;
                 }
@@ -302,13 +284,10 @@ async function criarPagamentoEMostrarQR() {
                 const statusJson = await statusResp.json();
                 const status = (statusJson.status || '').toString().toUpperCase();
 
-                // aceitar tanto "APPROVED" quanto "APROVADO"
                 if (status === 'APPROVED' || status === 'APROVADO') {
-                    // stop polling
                     clearInterval(pagamentoPollingHandle);
                     pagamentoPollingHandle = null;
 
-                    // Mostrar tela de finalização e resetar após contagem
                     telaPagamento.style.display = 'none';
                     telaFinalizacao.style.display = 'flex';
 
@@ -325,7 +304,6 @@ async function criarPagamentoEMostrarQR() {
                         }
                     }, 1000);
                 }
-                // você pode tratar outros status (REJECTED, PENDING) aqui se quiser
             } catch (e) {
                 console.error('Erro no polling de status', e);
             }
@@ -333,46 +311,8 @@ async function criarPagamentoEMostrarQR() {
 
     } catch (error) {
         console.error('Erro ao criar pagamento:', error);
-        alert('Erro ao processar pagamento. Tente novamente.');
+        mostrarErro('Erro ao processar pagamento. Tente novamente.');
     }
-}
-
-// ========================
-// Função alternativa usada antes (mantida para compatibilidade)
-// ========================
-function finalizarCompraNoBackend(metodo) {
-    // Caso ainda seja necessário, mas com o fluxo real usamos criarPagamentoEMostrarQR()
-    const total = produtos.reduce((sum, p) => sum + p.preco, 0);
-
-    const venda = {
-        valorTotal: total,
-        metodoPagamento: metodo
-    };
-
-    fetch('/vendas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(venda)
-    })
-    .finally(() => {
-        // Mostra tela finalização (fallback)
-        telaPagamento.style.display = 'none';
-        telaFinalizacao.style.display = 'flex';
-
-        let tempo = 10;
-        const contador = document.getElementById('contador-tempo');
-        if (contador) contador.textContent = tempo;
-
-        const interval = setInterval(() => {
-            tempo--;
-            if (contador) contador.textContent = tempo;
-
-            if (tempo <= 0) {
-                clearInterval(interval);
-                resetarSistema();
-            }
-        }, 1000);
-    });
 }
 
 // ========================
@@ -382,7 +322,6 @@ function resetarSistema() {
     produtos = [];
     cpfInformado = null;
 
-    // cancelar polling se houver
     if (pagamentoPollingHandle) {
         clearInterval(pagamentoPollingHandle);
         pagamentoPollingHandle = null;
@@ -395,6 +334,22 @@ function resetarSistema() {
     valorTotal.textContent = 'R$ 0,00';
     contadorProdutos.textContent = '0 itens';
 
-    // reset QR to placeholder
     if (qrCodeImg) qrCodeImg.src = 'https://via.placeholder.com/250x250?text=QR+CODE';
+}
+
+// ========================
+// MODAL DE ERRO
+// ========================
+function mostrarErro(msg) {
+    if (!modalErro || !erroMensagem) {
+        alert(msg); // fallback
+        return;
+    }
+
+    erroMensagem.textContent = msg;
+    modalErro.style.display = 'flex';
+
+    setTimeout(() => {
+        modalErro.style.display = 'none';
+    }, 3000);
 }
