@@ -231,7 +231,7 @@ async function criarPagamentoEMostrarQR() {
     const payload = { valorTotal: total, metodoPagamento: "PIX" };
 
     try {
-        const resp = await fetch('/vendas', {
+        const resp = await fetch('https://caixa-rapido-backend.onrender.com/vendas', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -275,7 +275,7 @@ async function criarPagamentoEMostrarQR() {
         const checkInterval = 3000;
         pagamentoPollingHandle = setInterval(async () => {
             try {
-                const statusResp = await fetch(`/vendas/status/${encodeURIComponent(paymentId)}`);
+                const statusResp = await fetch(`https://caixa-rapido-backend.onrender.com/vendas/status/${encodeURIComponent(paymentId)}`);
                 if (!statusResp.ok) {
                     console.warn('Erro ao consultar status do pagamento');
                     return;
