@@ -2,22 +2,30 @@ package com.caixarapido.model;
 
 import jakarta.persistence.*;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 public class Venda {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private Date data;
+
     private double valorTotal;
+
     private String metodoPagamento;
 
-    private String pagamentoId; 
-    private String status;      
+    private String pagamentoId;
 
-    @Column(columnDefinition = "LONGTEXT")
-    private String qrCodeBase64; // aqui o problema → agora resolvido!
+    private String status;
+
+    @Column(columnDefinition = "TEXT") // corrigido para PostgreSQL
+    private String qrCodeBase64;
+
+    @OneToMany(mappedBy = "venda", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ItemVenda> itens;
 
     // Getters e Setters
     public Long getId() { return id; }
@@ -40,4 +48,7 @@ public class Venda {
 
     public String getQrCodeBase64() { return qrCodeBase64; }
     public void setQrCodeBase64(String qrCodeBase64) { this.qrCodeBase64 = qrCodeBase64; }
+
+    public List<ItemVenda> getItens() { return itens; }
+    public void setItens(List<ItemVenda> itens) { this.itens = itens; }
 }
