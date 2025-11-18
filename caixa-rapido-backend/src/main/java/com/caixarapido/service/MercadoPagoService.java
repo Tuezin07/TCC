@@ -1,8 +1,5 @@
 package com.caixarapido.service;
 
-import com.mercadopago.MercadoPagoConfig;
-import com.mercadopago.client.preference.*;
-import com.mercadopago.resources.preference.Preference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,17 +24,12 @@ public class MercadoPagoService {
 
     private final RestTemplate restTemplate;
 
-    // Construtor para injeção de dependência do RestTemplate (singleton)
     public MercadoPagoService() {
         this.restTemplate = new RestTemplate();
     }
 
     /**
      * Cria um pagamento via PIX no MercadoPago.
-     *
-     * @param valor     Valor do pagamento.
-     * @param descricao Descrição do pagamento.
-     * @return Resposta do MercadoPago ou erro.
      */
     public String criarPagamentoPix(BigDecimal valor, String descricao) {
         if (valor == null || valor.compareTo(BigDecimal.ZERO) <= 0) {
@@ -58,33 +50,35 @@ public class MercadoPagoService {
             requestBody.put("transaction_amount", valor);
             requestBody.put("payment_method_id", "pix");
             requestBody.put("description", descricao);
-            requestBody.put("payer", Map.of("email", "comprador@email.com")); // Exemplo de pagador
+            requestBody.put("payer", Map.of(
+                "email", "cliente@caixarapido.com",
+                "first_name", "Cliente", 
+                "last_name", "Caixa Rápido"
+            ));
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
             // Envia a requisição
             ResponseEntity<String> response = restTemplate.postForEntity(API_URL, request, String.class);
 
-            if (response.getStatusCode() == HttpStatus.CREATED) {
+            if (response.getStatusCode() == HttpStatus.CREATED || response.getStatusCode() == HttpStatus.OK) {
                 log.info("Pagamento PIX criado com sucesso: {}", response.getBody());
                 return response.getBody();
             } else {
                 log.error("Erro ao criar pagamento PIX. Status: {} - Response: {}", response.getStatusCode(), response.getBody());
-                throw new RuntimeException("Falha ao criar pagamento PIX. Detalhes: " + response.getBody());
+                throw new RuntimeException("Falha ao criar pagamento PIX. Status: " + response.getStatusCode() + " - Detalhes: " + response.getBody());
             }
         } catch (Exception e) {
             log.error("Erro ao processar pagamento PIX", e);
-            throw new RuntimeException("Erro interno ao processar pagamento PIX.", e);
+            throw new RuntimeException("Erro interno ao processar pagamento PIX: " + e.getMessage(), e);
         }
     }
 
     /**
      * Consulta um pagamento PIX no Mercado Pago pelo ID.
-     *
-     * @param paymentId ID do pagamento.
-     * @return JSON da resposta do Mercado Pago.
+     * AGORA ACEITA STRING E LONG
      */
-    public String consultarPagamento(Long paymentId) {
+    public String consultarPagamento(String paymentId) {
         try {
             String url = API_URL + "/" + paymentId;
 
@@ -109,37 +103,8 @@ public class MercadoPagoService {
         }
     }
 
-    /**
-     * Cria uma preferência de pagamento para checkout do MercadoPago.
-     *
-     * @return Objeto Preference contendo os detalhes do pagamento.
-     * @throws Exception Se ocorrer um erro na criação da preferência.
-     */
-    public Preference criarPreferenciaDePagamento() throws Exception {
-        MercadoPagoConfig.setAccessToken(accessToken);
-        PreferenceClient client = new PreferenceClient();
-
-        PreferenceItemRequest itemRequest = PreferenceItemRequest.builder()
-                .id("1234")
-                .title("Produto Teste")
-                .description("Descrição do Produto")
-                .pictureUrl("https://www.meusite.com/imagem.jpg")
-                .categoryId("electronics")
-                .quantity(1)
-                .currencyId("BRL")
-                .unitPrice(new BigDecimal("100.00"))
-                .build();
-
-        PreferenceRequest preferenceRequest = PreferenceRequest.builder()
-                .items(java.util.Collections.singletonList(itemRequest))
-                .backUrls(PreferenceBackUrlsRequest.builder()
-                        .success("https://meusite.com/sucesso")
-                        .failure("https://meusite.com/erro")
-                        .pending("https://meusite.com/pendente")
-                        .build())
-                .autoReturn("approved")
-                .build();
-
-        return client.create(preferenceRequest);
+    // Overload para manter compatibilidade
+    public String consultarPagamento(Long paymentId) {
+        return consultarPagamento(paymentId.toString());
     }
 }

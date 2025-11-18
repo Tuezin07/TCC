@@ -220,6 +220,9 @@ btnVoltar.addEventListener('click', () => {
 // ========================
 // CRIAR PAGAMENTO E MOSTRAR QR
 // ========================
+// ========================
+// CRIAR PAGAMENTO E MOSTRAR QR
+// ========================
 async function criarPagamentoEMostrarQR() {
     const total = produtos.reduce((sum, p) => sum + p.preco, 0);
 
@@ -284,7 +287,12 @@ async function criarPagamentoEMostrarQR() {
                 const statusJson = await statusResp.json();
                 const status = (statusJson.status || '').toString().toUpperCase();
 
-                if (status === 'APPROVED' || status === 'APROVADO') {
+                console.log('Status do pagamento:', status); // DEBUG
+
+                // CORREÇÃO: ADICIONA TODOS OS STATUS POSSÍVEIS
+                if (status === 'APPROVED' || status === 'APROVADO' || status === 'APPROVED' || 
+                    status === 'APROVED' || status === 'APROVADA' || status === 'approved'.toUpperCase()) {
+                    
                     clearInterval(pagamentoPollingHandle);
                     pagamentoPollingHandle = null;
 
