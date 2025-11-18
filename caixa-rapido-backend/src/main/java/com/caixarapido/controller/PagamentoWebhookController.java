@@ -23,42 +23,59 @@ public class PagamentoWebhookController {
         this.mercadoPagoService = mercadoPagoService;
     }
 
-    @PostMapping
+    @PostMapping(consumes = "application/json")
     public ResponseEntity<?> receberWebhook(@RequestBody String payload) {
         try {
+
+            System.out.println("🔔 Webhook recebido: " + payload);
+
             JsonNode json = mapper.readTree(payload);
 
-            String type = json.path("type").asText(); // geralmente "payment"
-            if (!"payment".equals(type) && !"charge".equals(type)) {
+            // O Mercado Pago pode enviar "action": "payment.created" ou "payment.updated"
+            String action = json.path("action").asText();
+            JsonNode dataNode = json.path("data");
+
+            if (!action.startsWith("payment")) {
+                System.out.println("⚠️ Notificação ignorada: " + action);
                 return ResponseEntity.ok().build();
             }
 
-            // ID do pagamento enviado pelo Mercado Pago
-            String paymentIdStr = json.path("data").path("id").asText();
-
+            // ID do pagamento
+            String paymentIdStr = dataNode.path("id").asText();
             if (paymentIdStr == null || paymentIdStr.isEmpty()) {
+                System.out.println("⚠️ Webhook sem paymentId");
                 return ResponseEntity.ok().build();
             }
 
-            // 🔥 CONVERSÃO OBRIGATÓRIA
             Long paymentId = Long.parseLong(paymentIdStr);
 
-            // Consulta no Mercado Pago
+            // Consulta o pagamento no Mercado Pago
             String mpResponse = mercadoPagoService.consultarPagamento(paymentId);
             JsonNode mpJson = mapper.readTree(mpResponse);
-            String status = mpJson.path("status").asText(); // approved, rejected, pending, etc.
 
-            // Atualiza venda no BD
+            // STATUS ATUAL
+            String status = mpJson.path("status").asText();
+
+            System.out.println("ℹ️ Status recebido do MP: " + status);
+
+            // Localiza a venda
             Optional<Venda> opt = vendaRepository.findByPagamentoId(paymentIdStr);
+
             if (opt.isPresent()) {
                 Venda venda = opt.get();
                 venda.setStatus(status.toUpperCase());
                 vendaRepository.save(venda);
+                System.out.println("✅ Status atualizado para: " + status.toUpperCase());
+            } else {
+                System.out.println("❌ Venda não encontrada para paymentId " + paymentIdStr);
             }
 
             return ResponseEntity.ok("ok");
+
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("erro");
+            System.out.println("❌ ERRO no webhook: " + e.getMessage());
+            return ResponseEntity.status(500).body("erro no webhook: " + e.getMessage());
         }
     }
+
 }
