@@ -3,54 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Caixa Rápido - MAY ATACADISTA</title>
+    <title>NEXUS STORE - Autoatendimento</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <!-- Tela Inicial -->
     <div id="tela-inicial" class="tela">
-        <h1>NEXUS STORE</h1>
-        <img src="personagem.svg" alt="Personagem" class="personagem">
-        <button id="iniciar">Iniciar</button>
+        <div class="logo-container">
+            <img src="logo2.jpg" alt="Logo Nexus" class="logo-main">
+        </div>
+        <div class="hero">
+            <img src="self-checkout-animate.svg" alt="Personagem" class="personagem">
+            <div class="hero-text">
+                <h1>Autoatendimento <span>NEXUS STORE</span></h1>
+                <p>Faça suas compras de forma rápida e fácil</p>
+                <button id="iniciar" class="btn-vermelho">
+                    <i class="fas fa-play"></i> Iniciar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal CPF -->
+    <div id="modal-cpf" class="modal">
+        <div class="modal-content">
+            <h2>Deseja informar seu CPF?</h2>
+            <p>Informe para acumular pontos no programa de fidelidade</p>
+            
+            <div class="cpf-options">
+                <button id="btn-sem-cpf" class="btn-outline">Não, obrigado</button>
+                <button id="btn-com-cpf" class="btn-vermelho">Sim, informar CPF</button>
+            </div>
+            
+            <div id="cpf-input-container" style="display: none;">
+                <div class="cpf-display" id="cpf-display">___.___.___-__</div>
+                <div class="numpad">
+                    <button class="numpad-btn">1</button>
+                    <button class="numpad-btn">2</button>
+                    <button class="numpad-btn">3</button>
+                    <button class="numpad-btn">4</button>
+                    <button class="numpad-btn">5</button>
+                    <button class="numpad-btn">6</button>
+                    <button class="numpad-btn">7</button>
+                    <button class="numpad-btn">8</button>
+                    <button class="numpad-btn">9</button>
+                    <button class="numpad-btn" id="btn-clear"><i class="fas fa-backspace"></i></button>
+                    <button class="numpad-btn">0</button>
+                    <button class="numpad-btn" id="btn-confirm"><i class="fas fa-check"></i></button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Tela de Leitura de Produtos -->
     <div id="tela-leitura" class="tela" style="display: none;">
-        <div class="box-leitura">
-            <img src="images/letra-n.png" alt="Logo" class="logo">
-            <img src="images/codigo-de-barras.png" alt="Scanner" class="scanner">
-            <p class="paragrafo">Passe o código <br> de Barra <br> do produto <br> no leitor</p>
-
-            <!-- Campo de entrada para o código de barras -->
-            <input type="text" id="codigo-barras" placeholder="Passe o código de barras">
-
-            <!-- Lista de produtos lidos -->
-            <div id="produtos-lidos">
-                <!-- Produtos serão adicionados aqui dinamicamente -->
+        <div class="header">
+            <img src="logo2.jpg" alt="Logo" class="logo-small">
+            <div class="header-info">
+                <span id="data-hora"></span>
             </div>
-
-            <!-- Total da compra -->
-            <div id="total">
-                <strong>Total:</strong> <span id="valor-total">0.00</span>
+        </div>
+        
+        <div class="container-leitura">
+            <div class="scanner-area">
+                <div class="scanner-box">
+                    <i class="fas fa-barcode fa-5x"></i>
+                    <p>Passe o código de barras do produto no leitor</p>
+                    <div class="codigo-barras-container">
+                        <input type="text" id="codigo-barras" placeholder="Ou digite o código" autofocus>
+                        <div class="typing-animation">
+                            <div class="typing-line"></div>
+                            <div class="typing-dots">
+                                <div class="typing-dot"></div>
+                                <div class="typing-dot"></div>
+                                <div class="typing-dot"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            <!-- Botão para finalizar a compra -->
-            <button id="finalizar-compra">Finalize sua compra</button>
+            
+            <div class="produtos-area">
+                <div class="produtos-header">
+                    <h3>Seus Produtos</h3>
+                    <span id="contador-produtos">0 itens</span>
+                </div>
+                
+                <div id="produtos-lidos" class="produtos-lista">
+                    <!-- Produtos serão adicionados aqui -->
+                </div>
+                
+                <div class="produtos-footer">
+                    <div id="total" class="total-compra">
+                        <span>Total:</span>
+                        <strong id="valor-total">R$ 0,00</strong>
+                    </div>
+                    
+                    <button id="finalizar-compra" class="btn-vermelho-grande">
+                        <i class="fas fa-credit-card"></i> Finalizar Compra
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Tela de Pagamento -->
+    <!-- Modal Pagamento -->
+    <div id="modal-pagamento" class="modal">
+        <div class="modal-content pagamento-content">
+            <h2>Forma de Pagamento</h2>
+            <p>Selecione como deseja pagar</p>
+            
+            <div class="pagamento-options">
+                <button class="pagamento-btn" data-tipo="pix">
+                    <i class="fas fa-qrcode"></i>
+                    <span>PIX</span>
+                </button>
+            </div>
+            
+            <div class="pagamento-voltar">
+                <button id="voltar-pagamento" class="btn-outline">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela de Pagamento PIX -->
     <div id="tela-pagamento" class="tela" style="display: none;">
-        <div class="box-pagamento">
-            <h2>Pagamento via PIX</h2>
-            <p>Escaneie o QR Code abaixo para realizar o pagamento:</p>
-            <div id="qr-code">
-                <!-- QR Code será gerado aqui -->
+        <div class="header">
+            <img src="logo2.jpg" alt="Logo" class="logo-small">
+        </div>
+        
+        <div class="pagamento-container">
+            <h2><i class="fas fa-qrcode"></i> Pagamento via PIX</h2>
+            <p>Escaneie o QR Code abaixo para realizar o pagamento</p>
+            
+            <div id="qr-code" class="qr-code-container">
+                <img src="" alt="QR Code">
             </div>
-            <button id="voltar">Voltar</button>
+            
+            <div class="valor-pix">
+                <span>Valor:</span>
+                <strong id="valor-pix">R$ 0,00</strong>
+            </div>
+            
+            <button id="voltar" class="btn-outline">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </button>
         </div>
     </div>
 
+    <!-- Tela de Finalização -->
+    <div id="tela-finalizacao" class="tela" style="display: none;">
+        <div class="finalizacao-container">
+            <div class="checkmark">
+                <svg viewBox="0 0 52 52">
+                    <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                    <path class="checkmark-check" fill="none" d="M14 27l7 7 16-16"/>
+                </svg>
+            </div>
+            <h2>Compra finalizada com sucesso!</h2>
+            <p>Obrigado por comprar na <strong>NEXUS STORE</strong> 💳</p>
+            <p class="contador">Voltando à tela inicial em <span id="contador-tempo">15</span>s...</p>
+        </div>
+    </div>
     <script src="app.js"></script>
 </body>
 </html>

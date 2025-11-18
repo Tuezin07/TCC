@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carregando Painel</title>
+    <style>
+        /* ======== TEMA LOADING ======== */
+        #tela-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100%;
+            background: var(--gradient-secondary);
+            color: var(--cinza-escuro);
+            font-family: 'Outfit', sans-serif;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .spinner {
+            width: 90px;
+            height: 90px;
+            border: 6px solid rgba(0, 0, 0, 0.1);
+            border-top: 6px solid var(--vermelho-principal);
+            border-radius: 50%;
+            animation: spin 1.2s linear infinite, pulseShadow 2s ease-in-out infinite;
+            margin-bottom: 30px;
+        }
+
+        .loading-text {
+            font-size: 1.3em;
+            font-weight: 500;
+            color: var(--cinza-escuro);
+            letter-spacing: 0.8px;
+            animation: fadeInText 1.4s ease-in-out infinite alternate;
+        }
+
+        /* ======== ANIMAÇÕES ======== */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulseShadow {
+            0%, 100% {
+                box-shadow: 0 0 0px rgba(209, 0, 0, 0.0);
+            }
+            50% {
+                box-shadow: 0 0 25px rgba(209, 0, 0, 0.4);
+            }
+        }
+
+        @keyframes fadeInText {
+            from { opacity: 0.4; transform: translateY(3px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="tela-loading">
+        <div class="spinner"></div>
+        <p class="loading-text">Carregando painel administrativo...</p>
+    </div>
+
+    <script>
+        // Aguarda 2.5 segundos e redireciona para o painel
+        setTimeout(() => {
+            window.location.href = "painel.html";
+        }, 2500);
+    </script>
+</body>
+</html>

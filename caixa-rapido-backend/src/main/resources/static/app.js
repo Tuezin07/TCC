@@ -1,125 +1,400 @@
-// Variável para armazenar o valor total da compra
-let totalCompra = 0;
+// ======================== 
+// VARIÁVEIS GLOBAIS
+// ========================
+let produtos = [];
+let cpfInformado = null;
+let pagamentoPollingHandle = null;
 
-// Elementos da interface
-const telas = {
-    inicial: document.getElementById('tela-inicial'),
-    leitura: document.getElementById('tela-leitura'),
-    pagamento: document.getElementById('tela-pagamento')
-};
+// ELEMENTOS
+const telaInicial = document.getElementById('tela-inicial');
+const telaLeitura = document.getElementById('tela-leitura');
+const telaPagamento = document.getElementById('tela-pagamento');
+const modalCpf = document.getElementById('modal-cpf');
+const modalPagamento = document.getElementById('modal-pagamento');
+const telaFinalizacao = document.getElementById('tela-finalizacao');
 
-const elementos = {
-    codigoBarras: document.getElementById('codigo-barras'),
-    produtosLidos: document.getElementById('produtos-lidos'),
-    valorTotal: document.getElementById('valor-total'),
-    qrCode: document.getElementById('qr-code')
-};
+const btnIniciar = document.getElementById('iniciar');
+const btnFinalizar = document.getElementById('finalizar-compra');
+const btnVoltar = document.getElementById('voltar');
+const btnVoltarPagamento = document.getElementById('voltar-pagamento');
 
-// Configuração inicial das telas
-telas.inicial.style.display = 'block';
-telas.leitura.style.display = 'none';
-telas.pagamento.style.display = 'none';
+const btnSemCpf = document.getElementById('btn-sem-cpf');
+const btnComCpf = document.getElementById('btn-com-cpf');
+const cpfInputContainer = document.getElementById('cpf-input-container');
+const cpfDisplay = document.getElementById('cpf-display');
+const numpadBtns = document.querySelectorAll('.numpad-btn');
+const btnClear = document.getElementById('btn-clear');
+const btnConfirm = document.getElementById('btn-confirm');
 
-// Evento de clique no botão "Iniciar"
-document.getElementById('iniciar').addEventListener('click', () => {
-    telas.inicial.style.display = 'none';
-    telas.leitura.style.display = 'block';
-    elementos.codigoBarras.focus();
+const codigoBarras = document.getElementById('codigo-barras');
+const produtosLidos = document.getElementById('produtos-lidos');
+const valorTotal = document.getElementById('valor-total');
+const contadorProdutos = document.getElementById('contador-produtos');
+const dataHora = document.getElementById('data-hora');
+const valorPix = document.getElementById('valor-pix');
+const qrCodeImg = document.querySelector('#qr-code img');
+
+// ========================
+// INICIALIZAÇÃO
+// ========================
+document.addEventListener('DOMContentLoaded', () => {
+    atualizarDataHora();
+    setInterval(atualizarDataHora, 60000);
 });
 
-// Variável para controle do timeout
-let leituraTimeout;
+function atualizarDataHora() {
+    const agora = new Date();
+    const options = {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        hour: '2-digit',
+        minute: '2-digit'
+    };
+    dataHora.textContent = agora.toLocaleDateString('pt-BR', options);
+}
 
-// Evento de input no campo de código de barras (com timeout)
-elementos.codigoBarras.addEventListener('input', (event) => {
-    clearTimeout(leituraTimeout);
-    
-    // Aguarda 300ms após a última digitação para considerar o código completo
-    leituraTimeout = setTimeout(() => {
-        const codigoBruto = elementos.codigoBarras.value;
-        elementos.codigoBarras.value = ''; // Limpa o campo APÓS processar
-        
-        // Sanitiza o código (remove caracteres não numéricos)
-        const codigoBarras = codigoBruto.replace(/\D/g, '');
+// ========================
+// FLUXO DE TELAS
+// ========================
+btnIniciar.addEventListener('click', () => {
+    telaInicial.style.display = 'none';
+    modalCpf.style.display = 'flex';
+});
 
-        if (!codigoBarras) {
-            alert("Código inválido!");
-            return;
+btnSemCpf.addEventListener('click', () => {
+    modalCpf.style.display = 'none';
+    telaLeitura.style.display = 'flex';
+    codigoBarras.focus();
+});
+
+btnComCpf.addEventListener('click', () => {
+    cpfInputContainer.style.display = 'block';
+    btnComCpf.style.display = 'none';
+    btnSemCpf.style.display = 'none';
+});
+
+// ========================
+// CPF NUMPAD
+// ========================
+numpadBtns.forEach(btn => {
+    if (btn.id !== 'btn-clear' && btn.id !== 'btn-confirm') {
+        btn.addEventListener('click', () => {
+            const digit = btn.textContent;
+            let currentCpf = cpfDisplay.textContent;
+            const index = currentCpf.indexOf('_');
+
+            if (index !== -1) {
+                let newCpf = currentCpf.split('');
+                newCpf[index] = digit;
+                cpfDisplay.textContent = newCpf.join('');
+
+                if (!cpfDisplay.textContent.includes('_')) {
+                    cpfInformado = cpfDisplay.textContent;
+                }
+            }
+        });
+    }
+});
+
+btnClear.addEventListener('click', () => {
+    let newCpf = cpfDisplay.textContent.split('');
+
+    for (let i = newCpf.length - 1; i >= 0; i--) {
+        if (newCpf[i] !== '_' && newCpf[i] !== '.' && newCpf[i] !== '-') {
+            newCpf[i] = '_';
+            break;
         }
+    }
 
-        console.log(`Código Completo Lido: ${codigoBarras}`);
+    cpfDisplay.textContent = newCpf.join('');
+});
 
-        // Busca o produto na API
-        fetch(`/produtos/${codigoBarras}`)
+btnConfirm.addEventListener('click', () => {
+    if (!cpfDisplay.textContent.includes('_')) {
+        cpfInformado = cpfDisplay.textContent;
+        modalCpf.style.display = 'none';
+        telaLeitura.style.display = 'flex';
+        codigoBarras.focus();
+    } else {
+        alert('Informe um CPF completo ou clique em "Não, obrigado".');
+    }
+});
+
+// ========================
+// LEITURA DE PRODUTO
+// ========================
+codigoBarras.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        const codigo = codigoBarras.value.trim();
+        if (!codigo) return;
+
+        fetch(`/produtos/${codigo}`)
             .then(response => {
-                if (!response.ok) throw new Error(`Produto ${codigoBarras} não encontrado`);
+                if (!response.ok) throw new Error('Produto não encontrado');
                 return response.json();
             })
-            .then(produto => adicionarProduto(produto))
-            .catch(error => {
-                console.error(error.message);
-                alert(error.message);
+            .then(produto => {
+                adicionarProduto(produto);
+                codigoBarras.value = '';
+            })
+            .catch(() => {
+                alert('Produto não encontrado!');
+                codigoBarras.value = '';
             });
-    }, 300); // Tempo ajustável conforme necessidade do leitor
+    }
 });
 
-// Função para adicionar produto à lista
 function adicionarProduto(produto) {
-    const item = document.createElement('div');
-    item.className = 'produto-item';
-    item.innerHTML = `
-        <span>${produto.nome}</span>
-        <span>R$ ${produto.preco.toFixed(2)}</span>
-    `;
+    produtos.push(produto);
+    renderizarProdutos();
+    calcularTotal();
+}
+
+function renderizarProdutos() {
+    produtosLidos.innerHTML = '';
+    contadorProdutos.textContent =
+        `${produtos.length} ${produtos.length === 1 ? 'item' : 'itens'}`;
     
-    elementos.produtosLidos.appendChild(item);
-    atualizarTotal(produto.preco);
+    produtos.forEach(produto => {
+        const div = document.createElement('div');
+        div.className = 'produto-item';
+        div.innerHTML = `
+            <span class="produto-nome">${produto.nome}</span>
+            <span class="produto-preco">R$ ${produto.preco.toFixed(2)}</span>
+        `;
+        produtosLidos.appendChild(div);
+    });
 }
 
-function atualizarTotal(valor) {
-    totalCompra += valor;
-    elementos.valorTotal.textContent = totalCompra.toFixed(2);
+function calcularTotal() {
+    const total = produtos.reduce((sum, p) => sum + p.preco, 0);
+    valorTotal.textContent = `R$ ${total.toFixed(2)}`;
+    valorPix.textContent = `R$ ${total.toFixed(2)}`;
 }
 
-// Evento de clique no botão "Finalizar Compra"
-document.getElementById('finalizar-compra').addEventListener('click', function() {
-    fetch('http://localhost:8080/vendas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            valorTotal: totalCompra,  // Corrigido: "valorTotal" ao invés de "valor"
-            metodoPagamento: "PIX",
-            descricao: "Compra no Caixa Rápido"
-        })
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.json().then(err => {
-                throw new Error(err.error || 'Erro ao processar pagamento');
-            });
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log("Resposta do servidor:", data);
+// ========================
+// FINALIZAR COMPRA
+// ========================
+btnFinalizar.addEventListener('click', () => {
+    if (produtos.length === 0) {
+        alert('Nenhum produto adicionado!');
+        return;
+    }
 
-        // Verifica se a URL de pagamento foi recebida corretamente
-        if (!data.urlPagamento) {
-            throw new Error("Erro: URL de pagamento não recebida do servidor.");
-        }
+    modalPagamento.style.display = 'flex';
+});
 
-        // Redireciona para a página de pagamento do Mercado Pago
-        window.location.href = data.urlPagamento;
-    })
-    .catch(error => {
-        console.error('Erro:', error);
-        alert(error.message);
+btnVoltarPagamento.addEventListener('click', () => {
+    modalPagamento.style.display = 'none';
+});
+
+// ========================
+// PAGAMENTO
+// ========================
+document.querySelectorAll('.pagamento-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const metodo = btn.getAttribute('data-tipo');
+
+        modalPagamento.style.display = 'none';
+
+        if (metodo === 'pix') {
+            // chama a função que cria o pagamento e mostra o QR com polling
+            criarPagamentoEMostrarQR();
+        } else {
+            alert('Por enquanto somente PIX está disponível.');
+        }
     });
 });
 
+// botão "voltar" da tela de pagamento (cancela QR e polling)
+btnVoltar.addEventListener('click', () => {
+    // esconder tela de pagamento e mostrar leitura
+    telaPagamento.style.display = 'none';
+    telaLeitura.style.display = 'flex';
 
-// Evento de clique no botão "Voltar"
-document.getElementById('voltar').addEventListener('click', () => {
-    telas.pagamento.style.display = 'none';
-    telas.leitura.style.display = 'block';
+    // limpar QR image
+    if (qrCodeImg) qrCodeImg.src = 'https://via.placeholder.com/250x250?text=QR+CODE';
+
+    // cancelar polling se houver
+    if (pagamentoPollingHandle) {
+        clearInterval(pagamentoPollingHandle);
+        pagamentoPollingHandle = null;
+    }
 });
+
+// ========================
+// CRIAR PAGAMENTO E MOSTRAR QR (fluxo real)
+// ========================
+async function criarPagamentoEMostrarQR() {
+    const total = produtos.reduce((sum, p) => sum + p.preco, 0);
+
+    // validação rápida
+    if (isNaN(total) || total <= 0) {
+        alert('Valor inválido para pagamento.');
+        return;
+    }
+
+    const payload = { valorTotal: total, metodoPagamento: "PIX" };
+
+    try {
+        // Chama POST /vendas -> cria pagamento no Mercado Pago e salva venda PENDENTE
+        const resp = await fetch('/vendas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            console.error('Erro criar pagamento:', err);
+            alert('Erro ao gerar pagamento. Tente novamente.');
+            return;
+        }
+
+        const data = await resp.json();
+        const qrBase64 = data.qrCodeBase64 || data.qrCode || null; // fallback
+        const paymentId = (data.paymentId || data.payment_id || data.id || '').toString();
+        const ticketUrl = data.urlPagamento || data.ticket_url || null;
+
+        if (!qrBase64 && !ticketUrl) {
+            alert('QR Code não disponível. Tente novamente.');
+            return;
+        }
+
+        // Exibe tela do QR Code
+        telaLeitura.style.display = 'none';
+        telaPagamento.style.display = 'flex';
+
+        // Mostra o QR (img) — preferimos base64; se não houver, usa ticketUrl como fallback
+        if (qrBase64 && qrCodeImg) {
+            qrCodeImg.src = 'data:image/png;base64,' + qrBase64;
+        } else if (ticketUrl && qrCodeImg) {
+            // caso MP retorne uma URL (ticket_url) em vez de base64
+            qrCodeImg.src = ticketUrl;
+        }
+
+        // Atualiza valor exibido na tela de pagamento
+        if (valorPix) valorPix.textContent = `R$ ${total.toFixed(2)}`;
+
+        // Inicia polling para verificar status da venda no backend (GET /vendas/status/{paymentId})
+        if (!paymentId) {
+            console.warn('paymentId não retornado; polling não será iniciado.');
+            return;
+        }
+
+        // cancel any previous polling
+        if (pagamentoPollingHandle) {
+            clearInterval(pagamentoPollingHandle);
+            pagamentoPollingHandle = null;
+        }
+
+        const checkInterval = 3000; // ms
+        pagamentoPollingHandle = setInterval(async () => {
+            try {
+                const statusResp = await fetch(`/vendas/status/${encodeURIComponent(paymentId)}`);
+                if (!statusResp.ok) {
+                    // se 404 ou erro, apenas loga e tenta novamente
+                    console.warn('Erro ao consultar status do pagamento');
+                    return;
+                }
+
+                const statusJson = await statusResp.json();
+                const status = (statusJson.status || '').toString().toUpperCase();
+
+                // aceitar tanto "APPROVED" quanto "APROVADO"
+                if (status === 'APPROVED' || status === 'APROVADO') {
+                    // stop polling
+                    clearInterval(pagamentoPollingHandle);
+                    pagamentoPollingHandle = null;
+
+                    // Mostrar tela de finalização e resetar após contagem
+                    telaPagamento.style.display = 'none';
+                    telaFinalizacao.style.display = 'flex';
+
+                    let tempo = 10;
+                    const contador = document.getElementById('contador-tempo');
+                    if (contador) contador.textContent = tempo;
+
+                    const intervalo = setInterval(() => {
+                        tempo--;
+                        if (contador) contador.textContent = tempo;
+                        if (tempo <= 0) {
+                            clearInterval(intervalo);
+                            resetarSistema();
+                        }
+                    }, 1000);
+                }
+                // você pode tratar outros status (REJECTED, PENDING) aqui se quiser
+            } catch (e) {
+                console.error('Erro no polling de status', e);
+            }
+        }, checkInterval);
+
+    } catch (error) {
+        console.error('Erro ao criar pagamento:', error);
+        alert('Erro ao processar pagamento. Tente novamente.');
+    }
+}
+
+// ========================
+// Função alternativa usada antes (mantida para compatibilidade)
+// ========================
+function finalizarCompraNoBackend(metodo) {
+    // Caso ainda seja necessário, mas com o fluxo real usamos criarPagamentoEMostrarQR()
+    const total = produtos.reduce((sum, p) => sum + p.preco, 0);
+
+    const venda = {
+        valorTotal: total,
+        metodoPagamento: metodo
+    };
+
+    fetch('/vendas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(venda)
+    })
+    .finally(() => {
+        // Mostra tela finalização (fallback)
+        telaPagamento.style.display = 'none';
+        telaFinalizacao.style.display = 'flex';
+
+        let tempo = 10;
+        const contador = document.getElementById('contador-tempo');
+        if (contador) contador.textContent = tempo;
+
+        const interval = setInterval(() => {
+            tempo--;
+            if (contador) contador.textContent = tempo;
+
+            if (tempo <= 0) {
+                clearInterval(interval);
+                resetarSistema();
+            }
+        }, 1000);
+    });
+}
+
+// ========================
+// RESETAR SISTEMA
+// ========================
+function resetarSistema() {
+    produtos = [];
+    cpfInformado = null;
+
+    // cancelar polling se houver
+    if (pagamentoPollingHandle) {
+        clearInterval(pagamentoPollingHandle);
+        pagamentoPollingHandle = null;
+    }
+
+    telaFinalizacao.style.display = 'none';
+    telaInicial.style.display = 'flex';
+
+    produtosLidos.innerHTML = '';
+    valorTotal.textContent = 'R$ 0,00';
+    contadorProdutos.textContent = '0 itens';
+
+    // reset QR to placeholder
+    if (qrCodeImg) qrCodeImg.src = 'https://via.placeholder.com/250x250?text=QR+CODE';
+}

@@ -49,7 +49,7 @@ public class MercadoPagoService {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(accessToken);
-            
+
             // Gerando um ID único para evitar duplicação de pagamentos
             headers.set("X-Idempotency-Key", UUID.randomUUID().toString());
 
@@ -79,6 +79,37 @@ public class MercadoPagoService {
     }
 
     /**
+     * Consulta um pagamento PIX no Mercado Pago pelo ID.
+     *
+     * @param paymentId ID do pagamento.
+     * @return JSON da resposta do Mercado Pago.
+     */
+    public String consultarPagamento(Long paymentId) {
+        try {
+            String url = API_URL + "/" + paymentId;
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(accessToken);
+
+            HttpEntity<Void> request = new HttpEntity<>(headers);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    request,
+                    String.class
+            );
+
+            log.info("Consulta de pagamento PIX: {}", response.getBody());
+            return response.getBody();
+
+        } catch (Exception e) {
+            log.error("Erro ao consultar pagamento PIX: {}", e.getMessage());
+            throw new RuntimeException("Erro ao consultar pagamento PIX.");
+        }
+    }
+
+    /**
      * Cria uma preferência de pagamento para checkout do MercadoPago.
      *
      * @return Objeto Preference contendo os detalhes do pagamento.
@@ -89,27 +120,26 @@ public class MercadoPagoService {
         PreferenceClient client = new PreferenceClient();
 
         PreferenceItemRequest itemRequest = PreferenceItemRequest.builder()
-            .id("1234")
-            .title("Produto Teste")
-            .description("Descrição do Produto")
-            .pictureUrl("https://www.meusite.com/imagem.jpg")
-            .categoryId("electronics")
-            .quantity(1)
-            .currencyId("BRL")
-            .unitPrice(new BigDecimal("100.00"))
-            .build();
+                .id("1234")
+                .title("Produto Teste")
+                .description("Descrição do Produto")
+                .pictureUrl("https://www.meusite.com/imagem.jpg")
+                .categoryId("electronics")
+                .quantity(1)
+                .currencyId("BRL")
+                .unitPrice(new BigDecimal("100.00"))
+                .build();
 
         PreferenceRequest preferenceRequest = PreferenceRequest.builder()
-            .items(java.util.Collections.singletonList(itemRequest))
-            .backUrls(PreferenceBackUrlsRequest.builder()
-                .success("https://meusite.com/sucesso")
-                .failure("https://meusite.com/erro")
-                .pending("https://meusite.com/pendente")
-                .build())
-            .autoReturn("approved")
-            .build();
+                .items(java.util.Collections.singletonList(itemRequest))
+                .backUrls(PreferenceBackUrlsRequest.builder()
+                        .success("https://meusite.com/sucesso")
+                        .failure("https://meusite.com/erro")
+                        .pending("https://meusite.com/pendente")
+                        .build())
+                .autoReturn("approved")
+                .build();
 
         return client.create(preferenceRequest);
     }
 }
-

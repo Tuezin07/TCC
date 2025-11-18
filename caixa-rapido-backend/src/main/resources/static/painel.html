@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo — Caixa Rápido</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --vermelho-principal: #d10000;
+            --vermelho-escuro: #9a0000;
+            --vermelho-claro: #ff3a3a;
+            --cinza-claro: #f5f5f5;
+            --cinza-escuro: #333333;
+            --branco: #ffffff;
+            --preto: #000000;
+            --gradient-primary: linear-gradient(135deg, #d10000 0%, #ff3a3a 100%);
+            --gradient-secondary: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
+            --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.12);
+            --shadow-strong: 0 15px 40px rgba(0, 0, 0, 0.15);
+            --transition-fast: 0.2s ease;
+            --transition-normal: 0.3s ease;
+            --transition-slow: 0.5s ease;
+            --border-radius: 16px;
+            --border-radius-small: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: var(--gradient-secondary);
+            color: var(--cinza-escuro);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            animation: fadeIn 0.5s ease;
+        }
+
+        /* ===== HEADER ===== */
+        header {
+            background: var(--branco);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-soft);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            background: var(--gradient-primary);
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--branco);
+            font-size: 20px;
+            box-shadow: var(--shadow-medium);
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--cinza-escuro);
+        }
+
+        .logo-text span {
+            color: var(--vermelho-principal);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--cinza-claro);
+            padding: 8px 15px;
+            border-radius: var(--border-radius);
+        }
+
+        .user-avatar {
+            width: 35px;
+            height: 35px;
+            background: var(--gradient-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--branco);
+            font-weight: 600;
+        }
+
+        .btn-sair {
+            background: var(--gradient-primary);
+            color: var(--branco);
+            border: none;
+            padding: 10px 20px;
+            border-radius: var(--border-radius-small);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all var(--transition-normal);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .btn-sair:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        main {
+            flex: 1;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .page-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .page-title i {
+            background: var(--gradient-primary);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--branco);
+            font-size: 22px;
+        }
+
+        .page-title h2 {
+            font-size: 28px;
+            color: var(--cinza-escuro);
+            font-weight: 600;
+        }
+
+        /* ===== DASHBOARD CARDS ===== */
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: var(--branco);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            box-shadow: var(--shadow-soft);
+            transition: all var(--transition-normal);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--gradient-primary);
+        }
+
+        .card-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 15px;
+            background: var(--cinza-claro);
+            color: var(--vermelho-principal);
+        }
+
+        .card-title {
+            font-size: 16px;
+            color: var(--cinza-escuro);
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+
+        .card-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--cinza-escuro);
+            margin-bottom: 5px;
+        }
+
+        .card-trend {
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .trend-up {
+            color: #2e7d32;
+        }
+
+        .trend-down {
+            color: #c62828;
+        }
+
+        /* ===== TABELA ===== */
+        .tabela-container {
+            background: var(--branco);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-medium);
+            overflow: hidden;
+            animation: slideUp 0.6s ease;
+            margin-bottom: 30px;
+        }
+
+        .table-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid var(--cinza-claro);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-header h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--cinza-escuro);
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-action {
+            background: var(--cinza-claro);
+            border: none;
+            padding: 8px 15px;
+            border-radius: var(--border-radius-small);
+            cursor: pointer;
+            font-weight: 500;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-action:hover {
+            background: #e9e9e9;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: var(--branco);
+        }
+
+        .btn-primary:hover {
+            background: var(--vermelho-escuro);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.95em;
+        }
+
+        thead {
+            background: var(--cinza-claro);
+        }
+
+        th {
+            padding: 18px 25px;
+            font-weight: 600;
+            color: var(--cinza-escuro);
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        td {
+            padding: 16px 25px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tbody tr {
+            transition: all var(--transition-fast);
+        }
+
+        tbody tr:hover {
+            background-color: #f9f9f9;
+            transform: translateX(5px);
+        }
+
+        .total {
+            font-weight: 700;
+            color: var(--vermelho-principal);
+        }
+
+        .badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: rgba(46, 125, 50, 0.1);
+            color: #2e7d32;
+        }
+
+        .badge-warning {
+            background: rgba(237, 108, 2, 0.1);
+            color: #ed6c02;
+        }
+
+        /* ===== SPINNER ===== */
+        .spinner-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 60px;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(0, 0, 0, 0.1);
+            border-top: 5px solid var(--vermelho-principal);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .spinner-text {
+            color: var(--cinza-escuro);
+            font-weight: 500;
+        }
+
+        /* ===== ANIMAÇÕES ===== */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ===== RESPONSIVIDADE ===== */
+        @media (max-width: 768px) {
+            header {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            main {
+                padding: 20px 15px;
+            }
+
+            .dashboard-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .table-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            .table-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            th, td {
+                padding: 12px 15px;
+            }
+        }
+
+        /* ===== FOOTER ===== */
+        footer {
+            background: var(--branco);
+            padding: 20px;
+            text-align: center;
+            color: var(--cinza-escuro);
+            font-size: 14px;
+            border-top: 1px solid var(--cinza-claro);
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .system-info {
+            display: flex;
+            gap: 20px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4caf50;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="logo">
+        <div class="logo-icon">
+            <i class="fas fa-cash-register"></i>
+        </div>
+        <div class="logo-text">Caixa-<span>Rápido</span></div>
+    </div>
+    
+    <div class="header-actions">
+        <div class="user-info">
+            <div class="user-avatar">A</div>
+            <span>Administrador</span>
+        </div>
+        <button class="btn-sair" id="btnSair">
+            <i class="fas fa-sign-out-alt"></i>
+            Sair
+        </button>
+    </div>
+</header>
+
+<main>
+    <div class="page-title">
+        <i class="fas fa-chart-line"></i>
+        <h2>Dashboard de Vendas</h2>
+    </div>
+
+    <!-- ===== CARDS DE ESTATÍSTICAS ===== -->
+    <div class="dashboard-cards">
+        <!-- Vendas Hoje -->
+        <div class="card">
+            <div class="card-icon">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <div class="card-title">Vendas Hoje</div>
+            <div class="card-value" id="vendas-hoje">R$ 0,00</div>
+            <div class="card-trend trend-up">
+                <i class="fas fa-arrow-up"></i>
+                <span>Atualizado em tempo real</span>
+            </div>
+        </div>
+
+        <!-- Ticket Médio -->
+        <div class="card">
+            <div class="card-icon">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div class="card-title">Ticket Médio</div>
+            <div class="card-value" id="ticket-medio">R$ 0,00</div>
+            <div class="card-trend trend-up">
+                <i class="fas fa-arrow-up"></i>
+                <span>Com base nas vendas totais</span>
+            </div>
+        </div>
+
+        <!-- Total de Vendas -->
+        <div class="card">
+            <div class="card-icon">
+                <i class="fas fa-receipt"></i>
+            </div>
+            <div class="card-title">Total de Vendas</div>
+            <div class="card-value" id="total-vendas">R$ 0,00</div>
+            <div class="card-trend trend-down">
+                <i class="fas fa-arrow-down"></i>
+                <span>Dados consolidados</span>
+            </div>
+        </div>
+
+        <!-- Vendas do Mês -->
+        <div class="card">
+            <div class="card-icon">
+                <i class="fas fa-calendar-day"></i> 
+            </div>
+            <div class="card-title">Vendas do Mês</div>
+            <div class="card-value" id="vendas-mes">R$ 0,00</div>
+            <div class="card-trend trend-up">
+                <i class="fas fa-arrow-up"></i>
+                <span>Comparativo mensal</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TABELA DE VENDAS ===== -->
+    <div class="tabela-container" id="tabelaVendas" style="display: none;">
+        <div class="table-header">
+            <h3>📊 Relatório de Vendas</h3>
+            <div class="table-actions">
+                <button class="btn-action">
+                    <i class="fas fa-filter"></i>
+                    Filtrar
+                </button>
+                <button class="btn-action">
+                    <i class="fas fa-download"></i>
+                    Exportar
+                </button>
+                <button class="btn-action btn-primary" onclick="carregarVendas()">
+                    <i class="fas fa-sync-alt"></i>
+                    Atualizar
+                </button>
+            </div>
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Data/Hora</th>
+                    <th>Valor Total</th>
+                    <th>Forma de Pagamento</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="lista-vendas">
+                <!-- Dados serão carregados via JS -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ===== LOADING ===== -->
+    <div id="loading" class="spinner-container">
+        <div class="spinner"></div>
+        <div class="spinner-text">Carregando dados de vendas...</div>
+    </div>
+</main>
+
+<footer>
+    <div class="footer-content">
+        <div class="copyright">
+            Sistema Caixa Rápido &copy; 2025 - Todos os direitos reservados
+        </div>
+        <div class="system-info">
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span>Sistema Online</span>
+            </div>
+            <div>Versão 2.1.5</div>
+        </div>
+    </div>
+</footer>
+<script>
+const tabelaVendas = document.getElementById('tabelaVendas');
+const listaVendas = document.getElementById('lista-vendas');
+const loading = document.getElementById('loading');
+
+// Elementos dos cards de estatísticas (use os mesmos IDs no HTML)
+const totalVendasEl = document.getElementById('total-vendas');
+const vendasHojeEl = document.getElementById('vendas-hoje');
+const ticketMedioEl = document.getElementById('ticket-medio');
+
+// Função principal: carrega as vendas do backend
+async function carregarVendas() {
+    loading.style.display = 'flex';
+    tabelaVendas.style.display = 'none';
+
+    try {
+        const resposta = await fetch('/vendas'); // Endpoint do backend Java
+        if (!resposta.ok) throw new Error('Erro ao carregar vendas');
+
+        const vendas = await resposta.json();
+        listaVendas.innerHTML = '';
+
+        // Se não houver vendas
+        if (vendas.length === 0) {
+            listaVendas.innerHTML = `
+                <tr>
+                    <td colspan="4" style="text-align:center; padding: 40px;">
+                        <i class="fas fa-inbox" style="font-size: 40px; color: #ccc; margin-bottom: 10px;"></i>
+                        <div>Nenhuma venda registrada ainda.</div>
+                    </td>
+                </tr>`;
+            
+            atualizarEstatisticas([]); // Zera estatísticas
+        } else {
+            // Ordena por data (mais recente primeiro)
+            vendas.sort((a, b) => new Date(b.data) - new Date(a.data));
+
+            // Cria as linhas da tabela
+            vendas.forEach(venda => {
+                const linha = document.createElement('tr');
+                const dataVenda = new Date(venda.data || venda.dataHora || venda.createdAt);
+                const dataFormatada = dataVenda.toLocaleString('pt-BR', {
+                    day: '2-digit', month: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                });
+
+                linha.innerHTML = `
+                    <td>${dataFormatada}</td>
+                    <td class="total">R$ ${venda.valorTotal.toFixed(2)}</td>
+                    <td>${venda.metodoPagamento}</td>
+                    <td><span class="badge badge-success">Concluída</span></td>
+                `;
+                listaVendas.appendChild(linha);
+            });
+
+            atualizarEstatisticas(vendas);
+        }
+
+        loading.style.display = 'none';
+        tabelaVendas.style.display = 'block';
+    } catch (erro) {
+        console.error(erro);
+        listaVendas.innerHTML = `
+            <tr>
+                <td colspan="4" style="text-align:center; color:var(--vermelho-principal); padding: 40px;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 40px; margin-bottom: 10px;"></i>
+                    <div>Erro ao carregar vendas. Tente novamente.</div>
+                </td>
+            </tr>`;
+        loading.style.display = 'none';
+        tabelaVendas.style.display = 'block';
+        atualizarEstatisticas([]);
+    }
+}
+
+// Atualiza os números dos cards (total, hoje e ticket médio)
+function atualizarEstatisticas(vendas) {
+    const totalProdutosVendidos = vendas.reduce((acc, v) => acc + (v.quantidade || 1), 0);
+    const hoje = new Date();
+    const vendasHoje = vendas.filter(v => {
+        const dataVenda = new Date(v.data);
+        return dataVenda.getDate() === hoje.getDate() &&
+               dataVenda.getMonth() === hoje.getMonth() &&
+               dataVenda.getFullYear() === hoje.getFullYear();
+    });
+    const totalHoje = vendasHoje.reduce((acc, v) => acc + v.valorTotal, 0);
+    const ticketMedio = vendas.length > 0 ? (vendas.reduce((acc, v) => acc + v.valorTotal, 0) / vendas.length) : 0;
+
+    // Atualiza na tela com animação
+    animarNumero(totalVendasEl, totalProdutosVendidos, '');
+    animarNumero(vendasHojeEl, totalHoje, 'R$ ');
+    animarNumero(ticketMedioEl, ticketMedio, 'R$ ');
+}
+
+// Animação dos números (suaviza a contagem)
+function animarNumero(elemento, valorFinal, prefixo = '') {
+    let valorAtual = 0;
+    const duracao = 800;
+    const passo = Math.max(1, Math.floor(valorFinal / 60));
+    const intervalo = setInterval(() => {
+        valorAtual += passo;
+        if (valorAtual >= valorFinal) {
+            valorAtual = valorFinal;
+            clearInterval(intervalo);
+        }
+        elemento.textContent = prefixo + valorAtual.toFixed(2);
+    }, duracao / 60);
+}
+
+// Botão de sair do painel
+document.getElementById('btnSair').addEventListener('click', () => {
+    if (confirm('Tem certeza que deseja sair do painel administrativo?')) {
+        window.location.href = 'admin.html';
+    }
+});
+
+// Inicializa o painel
+carregarVendas();
+</script>
+
+</body>
+</html>
