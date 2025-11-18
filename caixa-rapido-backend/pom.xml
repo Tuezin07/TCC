@@ -73,9 +73,9 @@
 		<dependency>
     		<groupId>org.postgresql</groupId>
     		<artifactId>postgresql</artifactId>
-    		<version>42.6.0</version>
+    		<version>${postgresql.version}</version>
 		</dependency>
-		
+
 	</dependencies>
 
 	<build>
